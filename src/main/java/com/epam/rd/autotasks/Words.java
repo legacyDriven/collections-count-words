@@ -17,7 +17,17 @@ public class Words {
         for(String s : unique){
             entries.add(Words.mapToEntry(s.toLowerCase(), preprocessed));}
 
-        entries.sort(Comparator.comparing(Entry::getCount).reversed().thenComparing(Entry::getWord));
+        entries.sort(new Comparator<Entry>() {
+            @Override
+            public int compare(Entry o1, Entry o2) {
+                int countCompare = o2.count - o1.count;
+                if(countCompare!=0)
+                return o2.count - o1.count;
+
+                return o1.word.compareTo(o2.word);
+            }
+        }) ;
+
         int borderIndex = Words.findBorderIndex(entries);
         
         return Words.formatEntries(entries.subList(0,borderIndex));
@@ -63,10 +73,9 @@ public class Words {
         return result;
     }
 
-
     private static class Entry {
-        private final String word;
-        private final int count;
+        final String word;
+        final int count;
 
         private Entry(String word, int count) {
             this.word = word;
@@ -75,32 +84,6 @@ public class Words {
 
         static Entry constructEntry(String word, int count){
             return new Entry(word, count);
-        }
-
-        @Override
-        public String toString() {
-            return word + " - " + count;
-        }
-
-        String getWord() {
-            return word;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Entry entry = (Entry) o;
-            return count == entry.count && word.equals(entry.word);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(word, count);
         }
     }
 }
