@@ -2,66 +2,46 @@ package com.epam.rd.autotasks;
 
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Words {
 
+    private static final Comparator<Map.Entry<String, Integer>> valueComparator = (o1, o2) -> o2.getValue() - o1.getValue();
+
+    private static final Comparator<Map.Entry<String, Integer>> entryComparator = valueComparator.thenComparing(Map.Entry::getKey);
+
     private static final Pattern wordPattern = Pattern.compile("[\\p{L}|\\p{N}]{4,}");
 
-    public String countWords(List<String> lines){
-        List<String> preprocessed = Words.preprocess(lines);
-        Set<String> unique = new HashSet<>(preprocessed);
+    private final Map<String, Integer> capturedValues;
 
-        List<Entry> entries = new ArrayList<>();
-        for(String s : unique){
-            entries.add(Words.mapToEntry(s.toLowerCase(), preprocessed));}
-
-        entries.sort(new Comparator<Entry>() {
-            @Override
-            public int compare(Entry o1, Entry o2) {
-                int countCompare = o2.count - o1.count;
-                if(countCompare!=0)
-                return o2.count - o1.count;
-
-                return o1.word.compareTo(o2.word);
-            }
-        }) ;
-
-        int borderIndex = Words.findBorderIndex(entries);
-        
-        return Words.formatEntries(entries.subList(0,borderIndex));
+    public Words() {
+        capturedValues = new ConcurrentHashMap<>();
     }
 
-    private static int findBorderIndex(List<Entry> entries) {
-        int result = 0;
-        for(Entry e : entries){
-            if(e.count>9) result++;
-            else return result;
+    public String countWords(List<String> lines) {
+        capturedValues.clear();
+        for (String line : lines){
+            addToMap(captureValues(line));
         }
-        return result;
+        removeObsoleteEntries(capturedValues);
+        List<Map.Entry<String, Integer>> result = new ArrayList<>(capturedValues.entrySet());
+        result.sort(entryComparator);
+        return entryListToString(result);
     }
 
-    private static String formatEntries(List<Entry> entries) {
-        StringBuilder sb = new StringBuilder();
-        for(Entry e : entries){
-            if(entries.indexOf(e)!=entries.size()-1)
-            sb.append(e.word).append(" - ").append(e.count).append("\n");
-            else sb.append(e.word).append(" - ").append(e.count);
+    private void removeObsoleteEntries(Map<String, Integer> argument){
+        for (Map.Entry<String, Integer> entry : argument.entrySet()){
+            if(entry.getValue()<10) argument.remove(entry.getKey());
         }
-        return sb.toString();
     }
 
-    private static Entry mapToEntry(String input, List<String> toCountFrom){
-        return Entry.constructEntry(input,Collections.frequency(toCountFrom, input));
-    }
-
-    private static List<String> preprocess(List<String> lines){
-        List<String> result = new ArrayList<>();
-        for(String s : lines){
-            result.addAll(Words.captureValues(s));
+    private void addToMap(List<String> values){
+        for(String s : values){
+            if(capturedValues.containsKey(s)) capturedValues.put(s, capturedValues.get(s) +1);
+            else capturedValues.put(s, 1);
         }
-        return result;
     }
 
     private static List<String> captureValues(String input){
@@ -73,18 +53,11 @@ public class Words {
         return result;
     }
 
-    private static class Entry {
-        final String word;
-        final int count;
-
-        private Entry(String word, int count) {
-            this.word = word;
-            this.count = count;
+    private String entryListToString(List<Map.Entry<String, Integer>> argument){
+        StringJoiner sj = new StringJoiner("\n");
+        for(Map.Entry<String, Integer> entry : argument){
+            sj.add(entry.getKey() + " - " + entry.getValue());
         }
-
-        static Entry constructEntry(String word, int count){
-            return new Entry(word, count);
-        }
+        return sj.toString();
     }
 }
-
