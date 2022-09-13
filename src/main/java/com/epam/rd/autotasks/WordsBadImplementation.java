@@ -3,38 +3,35 @@ package com.epam.rd.autotasks;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//an example of how not to do it (;
 public class WordsBadImplementation {
 
     private static final Pattern wordPattern = Pattern.compile("[\\p{L}|\\p{N}]{4,}");
 
     public String countWords(List<String> lines){
-        List<String> preprocessed = WordsBadImplementation.preprocess(lines);
+        List<String> preprocessed = preprocess(lines);
         Set<String> unique = new HashSet<>(preprocessed);
 
-        List<WordsBadImplementation.Entry> entries = new ArrayList<>();
+        List<Entry> entries = new ArrayList<>();
         for(String s : unique){
-            entries.add(WordsBadImplementation.mapToEntry(s.toLowerCase(), preprocessed));}
+            entries.add(mapToEntry(s.toLowerCase(), preprocessed));}
 
-        entries.sort(new Comparator<WordsBadImplementation.Entry>() {
-            @Override
-            public int compare(Entry o1, Entry o2) {
-                int countCompare = o2.count - o1.count;
-                if(countCompare!=0)
-                    return o2.count - o1.count;
+        entries.sort((o1, o2) -> {
+            int countCompare = o2.count - o1.count;
+            if (countCompare != 0)
+                return o2.count - o1.count;
 
-                return o1.word.compareTo(o2.word);
-            }
+            return o1.word.compareTo(o2.word);
         }) ;
 
-        int borderIndex = WordsBadImplementation.findBorderIndex(entries);
+        int borderIndex = findBorderIndex(entries);
 
-        return WordsBadImplementation.formatEntries(entries.subList(0,borderIndex));
+        return formatEntries(entries.subList(0,borderIndex));
     }
 
-    private static int findBorderIndex(List<WordsBadImplementation.Entry> entries) {
+    private static int findBorderIndex(List<Entry> entries) {
         int result = 0;
-        for(WordsBadImplementation.Entry e : entries){
+        for(Entry e : entries){
             if(e.count>9) result++;
             else return result;
         }
